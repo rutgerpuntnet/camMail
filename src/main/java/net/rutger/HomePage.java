@@ -4,6 +4,9 @@ import org.apache.wicket.request.mapper.parameter.PageParameters;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.WebPage;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.util.Date;
@@ -26,6 +29,19 @@ public class HomePage extends WebPage {
 //			File tempFile=new File("/tmp/thumb.jpg");
 //			File renamedFile=new File("/tmp/thumbLatest.jpg");
 //			while(!tempFile.renameTo(renamedFile)); //try re-naming the file which is being encoded by ffmpeg
+//			Date date = new Date(file.lastModified());
+
+			long lastmodified = System.currentTimeMillis();
+			try {
+				Thread.sleep(100);
+			} catch(InterruptedException ex) {
+				Thread.currentThread().interrupt();
+			}
+			while(lastmodified <= System.currentTimeMillis()) {
+				File file = new File("/tmp/thumb.jpg");
+				lastmodified = file.lastModified();
+			}
+
 
 			System.out.println("Encoding done");
 
@@ -36,5 +52,21 @@ public class HomePage extends WebPage {
 			System.out.println("IOException on ffmpeg call");
 		}
 
+	}
+
+
+	private byte[] getImage(File imageFile) {
+		BufferedImage img = null;
+		byte[] bytes;
+		try {
+			img = ImageIO.read(imageFile);
+			ByteArrayOutputStream baos = new ByteArrayOutputStream();
+			ImageIO.write(img, "jpg", baos);
+			bytes = baos.toByteArray();
+		} catch (IOException e) {
+			System.out.println("failed to read image");
+			return null;
+		}
+		return bytes;
 	}
 }

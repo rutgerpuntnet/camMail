@@ -1,0 +1,55 @@
+body {
+	margin: 0;
+	padding: 0;
+	background-color: black;
+	color: graytext;
+}
+
+ul, ul li {
+	/* Setting a common base */
+	margin: 0;
+	padding: 0;
+}
+
+ul li {
+	display: inline-block;
+	width: 200px;
+	float: left;
+}
+
+.bottom {
+	display: block;
+	clear: both;
+}
+
+.frontdoorImage {
+	width: 1280px;
+}
+
+.mainImage {
+	position: relative;
+	z-index: 1;
+}
+
+.mainImage .desc {
+	position: absolute;
+/*	width: 100%; */
+	bottom: 10px;
+	left: 10px;
+	z-index: 2;
+	text-align: left;
+	color: black;
+	font-size: larger;
+}
+
+.mainImage .descSmall {
+	position: absolute;
+/*	width: 100%; */
+	bottom: 5px;
+	left: 5px;
+	z-index: 2;
+	text-align: left;
+	color: black;
+	font-size: smaller; 
+}
+

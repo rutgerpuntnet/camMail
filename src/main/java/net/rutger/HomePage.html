@@ -4,22 +4,17 @@
 		<meta charset="utf-8" />
 		<title>camMail</title>
 		<link href='http://fonts.googleapis.com/css?family=Yanone+Kaffeesatz:regular,bold' rel='stylesheet' type='text/css' />
-		<link rel="stylesheet" href="style.css" type="text/css" media="screen" title="Stylesheet" />
+		<link rel="stylesheet" href="frontdoor.css" type="text/css" media="screen" title="Stylesheet" />
 	</head>
-	<body>
-		<div id="hd">
-			<div id="logo">
-				<img src="logo.png" width="50px" height="50px" alt="Wicket Logo" />
-				<h1>camMail</h1>
-			</div>
+	<body
+			style="margin: 0; padding: 0; background-color: black; color: graytext;">
+
+	<div class="frontdoorImage">
+		<div class="mainImage">
+			<a wicket:id="reload">
+				<img id="frontdoorimage" name="voordeur" alt="Voordeur" wicket:id="thumbnail" />
+			</a>
 		</div>
-		<div id="bd">
-			<h2>This is camMail! version <span wicket:id="version"/></h2>
-			<p>
-				blabla
-			</p>
-		</div>
-		<div id="ft">
-		</div>
-	</body>
+	</div>
+</body>
 </html>

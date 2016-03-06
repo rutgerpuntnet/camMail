@@ -13,9 +13,7 @@ import org.apache.wicket.request.resource.IResource;
 import javax.imageio.ImageIO;
 import javax.servlet.ServletContext;
 import java.awt.image.BufferedImage;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 
 /**
  * Created by rutger on 05-03-16.
@@ -36,13 +34,18 @@ public abstract class AbstractCamPage extends WebPage {
         super(parameters);
     }
 
-    protected Image processImage(String imageLocation, String param) {
+    protected Image processImage(String imageLocation, String param, boolean debug) {
         long startmillis = System.currentTimeMillis();
         Integer errCode = null;
         try {
-            ProcessBuilder pb = new ProcessBuilder("frontdoorimage.sh", imageLocation, param);
+            ProcessBuilder pb = new ProcessBuilder("/usr/local/bin/frontdoorimage.sh", imageLocation, param);
             logger.debug("Run command");
             Process process = pb.start();
+            if (debug) {
+                logger.debug("=== Start debug output");
+                logger.debug(getProcessOutput(process));
+                logger.debug("=== Stop debug output");
+            }
             errCode = process.waitFor();
 
         } catch (IOException e) {
@@ -102,4 +105,15 @@ public abstract class AbstractCamPage extends WebPage {
 
     }
 
+    private String getProcessOutput(Process process) throws IOException {
+        BufferedReader reader =
+                new BufferedReader(new InputStreamReader(process.getInputStream()));
+        StringBuilder builder = new StringBuilder();
+        String line = null;
+        while ( (line = reader.readLine()) != null) {
+            builder.append(line);
+            builder.append(System.getProperty("line.separator"));
+        }
+        return builder.toString();
+    }
 }

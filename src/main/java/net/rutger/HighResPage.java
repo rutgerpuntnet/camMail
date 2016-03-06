@@ -25,7 +25,7 @@ public class HighResPage extends AbstractCamPage {
 	public HighResPage(final PageParameters parameters) {
 		super(parameters);
 
-		Image image = processImage(THUMBNAIL_LOCATION, "0");
+		Image image = processImage(THUMBNAIL_LOCATION, "0", false);
 
 		Link reloadLink = new Link("reload") {
 			@Override

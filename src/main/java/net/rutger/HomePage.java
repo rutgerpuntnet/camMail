@@ -5,6 +5,7 @@ import org.apache.wicket.markup.html.image.Image;
 import org.apache.wicket.markup.html.link.BookmarkablePageLink;
 import org.apache.wicket.markup.html.link.Link;
 import org.apache.wicket.request.mapper.parameter.PageParameters;
+import org.apache.wicket.util.string.StringValue;
 
 public class HomePage extends AbstractCamPage {
 	private static final String THUMBNAIL_LOCATION = "/var/frontdoor/latestThumbnail.jpg";
@@ -14,7 +15,9 @@ public class HomePage extends AbstractCamPage {
 	public HomePage(final PageParameters parameters) {
 		super(parameters);
 
-		Image image = processImage(THUMBNAIL_LOCATION, "1");
+		StringValue debugParam = parameters.get("debug");
+		boolean debugImage = debugParam.isEmpty() ? false : debugParam.toBoolean();
+		Image image = processImage(THUMBNAIL_LOCATION, "1", debugImage);
 
 		Link reloadLink = new Link("reload") {
 			@Override
@@ -29,5 +32,9 @@ public class HomePage extends AbstractCamPage {
 		this.add(highResLink);
 
 	}
+
+	//TODO
+	// add mail image
+	// give image unique datetimestamp name
 
 }

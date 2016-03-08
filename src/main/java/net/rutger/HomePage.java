@@ -16,8 +16,7 @@ public class HomePage extends AbstractCamPage {
 		super(parameters);
 
 		StringValue debugParam = parameters.get("debug");
-		boolean debugImage = debugParam.isEmpty() ? false : debugParam.toBoolean();
-		Image image = processImage(THUMBNAIL_LOCATION, "1", debugImage);
+		Image image = processImage(THUMBNAIL_LOCATION, "1");
 
 		Link reloadLink = new Link("reload") {
 			@Override

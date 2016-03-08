@@ -34,18 +34,14 @@ public abstract class AbstractCamPage extends WebPage {
         super(parameters);
     }
 
-    protected Image processImage(String imageLocation, String param, boolean debug) {
+    protected Image processImage(String imageLocation, String param) {
         long startmillis = System.currentTimeMillis();
         Integer errCode = null;
         try {
             ProcessBuilder pb = new ProcessBuilder("/usr/local/bin/frontdoorimage.sh", imageLocation, param);
             logger.debug("Run command");
             Process process = pb.start();
-            if (debug) {
-                logger.debug("=== Start debug output");
-                logger.debug(getProcessOutput(process));
-                logger.debug("=== Stop debug output");
-            }
+            logger.debug(getProcessOutput(process));
             errCode = process.waitFor();
 
         } catch (IOException e) {

@@ -2,10 +2,14 @@ package net.rutger;
 
 import org.apache.log4j.Logger;
 import org.apache.wicket.markup.html.image.Image;
+import org.apache.wicket.markup.html.image.NonCachingImage;
 import org.apache.wicket.markup.html.link.BookmarkablePageLink;
 import org.apache.wicket.markup.html.link.Link;
+import org.apache.wicket.request.http.WebResponse;
 import org.apache.wicket.request.mapper.parameter.PageParameters;
 import org.apache.wicket.util.string.StringValue;
+
+import javax.servlet.http.HttpServletResponse;
 
 public class HomePage extends AbstractCamPage {
 	private static final String THUMBNAIL_LOCATION = "/var/frontdoor/latestThumbnail.jpg";
@@ -15,13 +19,14 @@ public class HomePage extends AbstractCamPage {
 	public HomePage(final PageParameters parameters) {
 		super(parameters);
 
-		StringValue debugParam = parameters.get("debug");
-		Image image = processImage(THUMBNAIL_LOCATION, "1");
+		NonCachingImage image = processImage(THUMBNAIL_LOCATION, "1");
 
 		Link reloadLink = new Link("reload") {
 			@Override
 			public void onClick() {
-				setResponsePage(new HomePage(new PageParameters()));
+				PageParameters params = new PageParameters();
+				params.add("param","true");
+				setResponsePage(new HomePage(params));
 			}
 		};
 		reloadLink.add(image);

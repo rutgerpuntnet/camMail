@@ -7,6 +7,9 @@ import org.apache.wicket.protocol.http.WebApplication;
 import org.apache.wicket.request.mapper.parameter.PageParameters;
 import org.apache.wicket.request.resource.DynamicImageResource;
 import org.apache.wicket.request.resource.IResource;
+import org.joda.time.DateTime;
+import org.joda.time.format.DateTimeFormat;
+import org.joda.time.format.DateTimeFormatter;
 
 import javax.imageio.ImageIO;
 import javax.mail.*;
@@ -14,10 +17,10 @@ import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeMultipart;
-import javax.mail.util.ByteArrayDataSource;
 import javax.servlet.ServletContext;
 import java.awt.image.BufferedImage;
 import java.io.*;
+import java.util.Locale;
 import java.util.Properties;
 
 /**
@@ -28,27 +31,53 @@ public abstract class AbstractCamPage extends WebPage {
     private static final Logger logger = Logger.getLogger(AbstractCamPage.class);
 
 
+    public AbstractCamPage() {
+
+    }
+
     public AbstractCamPage(PageParameters parameters) {
         super(parameters);
     }
 
     protected NonCachingImage processImage(String imageLocation, String param) {
-        long startmillis = System.currentTimeMillis();
-        Integer errCode = null;
-        try {
-            ProcessBuilder pb = new ProcessBuilder("/usr/local/bin/frontdoorimage.sh", imageLocation, param);
-            logger.debug("Run command");
-            Process process = pb.start();
-            logger.debug(getProcessOutput(process));
-            errCode = process.waitFor();
 
+        try {
+            runScript(imageLocation, param);
+
+            if(getPageParameters().get("email").toBoolean()){
+                emailImage(imageLocation);
+            }
+
+            final byte[] imageBytes = getImage(imageLocation);
+            logger.debug("image byte length = " + imageBytes.length);
+
+            IResource imageResource = new DynamicImageResource() {
+                @Override
+                protected byte[] getImageData(Attributes attributes) {
+                    return imageBytes;
+                }
+            };
+            return new NonCachingImage("thumbnail", imageResource);
         } catch (IOException e) {
             logger.error("IOException on ffmpeg call", e);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
         }
+        return null;
+    }
 
-        logger.debug("Encoding done:" + errCode);
+    private void runScript(String imageLocation, String param) throws IOException {
+        long startmillis = System.currentTimeMillis();
+        Integer errCode;
+        ProcessBuilder pb = new ProcessBuilder("/usr/local/bin/frontdoorimage.sh", imageLocation, param);
+        logger.debug("Run command");
+        Process process = pb.start();
+        logger.debug(getProcessOutput(process));
+        try {
+            errCode = process.waitFor();
+            logger.debug("Image encoding done:" + errCode);
+        } catch(InterruptedException ex) {
+            logger.error("InterruptedException on waiting for script", ex);
+            Thread.currentThread().interrupt();
+        }
 
         long totalMillis = System.currentTimeMillis() - startmillis;
         logger.debug("ffmpeg call in ms:" + totalMillis);
@@ -59,22 +88,20 @@ public abstract class AbstractCamPage extends WebPage {
             Thread.currentThread().interrupt();
         }
 
-        final byte[] thumbnail = getImage(imageLocation);
-        logger.debug("Thumbnail byte length = " + thumbnail.length);
-        if(getPageParameters().get("email").toBoolean()){
-            emailImage(thumbnail);
-        }
-
-        IResource imageResource = new DynamicImageResource() {
-            @Override
-            protected byte[] getImageData(Attributes attributes) {
-                return thumbnail;
-            }
-        };
-        return new NonCachingImage("thumbnail", imageResource);
     }
 
-    protected void emailImage(byte[] thumbnail){
+    protected boolean emailImage(String imageLocation, String param) {
+        try {
+            runScript(imageLocation, param);
+            emailImage(imageLocation);
+        } catch (IOException e) {
+            logger.error("IOException on ffmpeg call", e);
+            return false;
+        }
+        return true;
+    }
+
+    private void emailImage(String imageLocation){
         logger.debug("Email image");
         Properties mailProps = getEmailProperties();
         final String username = mailProps.getProperty("emailUser");
@@ -96,22 +123,20 @@ public abstract class AbstractCamPage extends WebPage {
         try {
 
             Message message = new MimeMessage(session);
-            message.setFrom(new InternetAddress(mailProps.getProperty("emailFrom")));
+            message.setFrom(new InternetAddress(mailProps.getProperty("emailFrom"), "Voordeur"));
+
             message.setRecipients(Message.RecipientType.TO,
                     InternetAddress.parse(mailProps.getProperty("emailTo")));
-            message.setSubject("Deurbel");
-            message.setText("Er is iemand aan de deur");
 
-
-            MimeBodyPart attachment= new MimeBodyPart();
+            DateTimeFormatter fmt = DateTimeFormat.forPattern("E d MMMM, HH:mm").withLocale(new Locale("nl", "NL"));
+            message.setSubject("Deurbel ging: " + new DateTime().toString(fmt));
 
             Multipart mp=new MimeMultipart();
 
-            ByteArrayDataSource src = new ByteArrayDataSource
-                    (thumbnail,"image/jpeg");
-            attachment.setFileName("voordeur.jpg");
-            attachment.setContent(src,"image/jpeg");
+            MimeBodyPart attachment= new MimeBodyPart();
+            attachment.attachFile(imageLocation);
             mp.addBodyPart(attachment);
+
             message.setContent(mp);
 
             Transport.send(message);
@@ -120,6 +145,8 @@ public abstract class AbstractCamPage extends WebPage {
 
         } catch (MessagingException e) {
             logger.error("MessagingException while sending email", e);
+        } catch (IOException e) {
+            logger.error("IOException while creating image for sending email", e);
         }
     }
 

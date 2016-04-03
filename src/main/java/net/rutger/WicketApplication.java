@@ -27,6 +27,9 @@ public class WicketApplication extends WebApplication
 	public void init()
 	{
 		super.init();
+		mount(new MountedMapperWithoutPageComponentInfo("/homepage", HomePage.class));
+		mount(new MountedMapperWithoutPageComponentInfo("/highRes", HighResPage.class));
+		mount(new MountedMapperWithoutPageComponentInfo("/email", EmailPage.class));
 
 		// add your configuration here
 	}

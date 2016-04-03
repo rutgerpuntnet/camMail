@@ -37,8 +37,4 @@ public class HomePage extends AbstractCamPage {
 
 	}
 
-	//TODO
-	// add mail image
-	// give image unique datetimestamp name
-
 }

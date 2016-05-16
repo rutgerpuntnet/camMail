@@ -22,6 +22,7 @@ import java.awt.image.BufferedImage;
 import java.io.*;
 import java.util.Locale;
 import java.util.Properties;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Created by rutger on 05-03-16.
@@ -45,7 +46,7 @@ public abstract class AbstractCamPage extends WebPage {
             runScript(imageLocation, param);
 
             if(getPageParameters().get("email").toBoolean()){
-                emailImage(imageLocation);
+                email(imageLocation, true, false);
             }
 
             final byte[] imageBytes = getImage(imageLocation);
@@ -66,14 +67,18 @@ public abstract class AbstractCamPage extends WebPage {
 
     private void runScript(String imageLocation, String param) throws IOException {
         long startmillis = System.currentTimeMillis();
-        Integer errCode;
-        ProcessBuilder pb = new ProcessBuilder("/usr/local/bin/frontdoorimage.sh", imageLocation, param);
+
+        String[] command = {"/usr/local/bin/frontdoorimage.sh", imageLocation, param};
+
+        ProcessBuilder pb = new ProcessBuilder(command);
+
         logger.debug("Run command");
         Process process = pb.start();
-        logger.debug(getProcessOutput(process));
+        logger.debug("Process output: " + getProcessOutput(process));
         try {
-            errCode = process.waitFor();
-            logger.debug("Image encoding done:" + errCode);
+            boolean error = process.waitFor(20l, TimeUnit.SECONDS);
+            logger.debug("Done running command:" + error);
+            logger.debug("Exitcode " + process.exitValue());
         } catch(InterruptedException ex) {
             logger.error("InterruptedException on waiting for script", ex);
             Thread.currentThread().interrupt();
@@ -90,10 +95,10 @@ public abstract class AbstractCamPage extends WebPage {
 
     }
 
-    protected boolean emailImage(String imageLocation, String param) {
+    protected boolean email(String imageLocation, String param) {
         try {
             runScript(imageLocation, param);
-            emailImage(imageLocation);
+            email(imageLocation, true, false);
         } catch (IOException e) {
             logger.error("IOException on ffmpeg call", e);
             return false;
@@ -101,7 +106,7 @@ public abstract class AbstractCamPage extends WebPage {
         return true;
     }
 
-    private void emailImage(String imageLocation){
+    protected void email(String content, boolean contentIsImageLocation, boolean debug){
         logger.debug("Email image");
         Properties mailProps = getEmailProperties();
         final String username = mailProps.getProperty("emailUser");
@@ -125,19 +130,32 @@ public abstract class AbstractCamPage extends WebPage {
             Message message = new MimeMessage(session);
             message.setFrom(new InternetAddress(mailProps.getProperty("emailFrom"), "Voordeur"));
 
-            message.setRecipients(Message.RecipientType.TO,
-                    InternetAddress.parse(mailProps.getProperty("emailTo")));
+            InternetAddress[] addresses = InternetAddress.parse(mailProps.getProperty("emailTo"));
+            InternetAddress[] recipients;
+            if (debug && addresses.length>1) {
+                recipients = new InternetAddress[] {addresses[0]};
+            } else {
+                recipients = addresses;
+            }
+            message.setRecipients(Message.RecipientType.TO, recipients);
 
             DateTimeFormatter fmt = DateTimeFormat.forPattern("E d MMMM, HH:mm").withLocale(new Locale("nl", "NL"));
             message.setSubject("Deurbel ging: " + new DateTime().toString(fmt));
 
-            Multipart mp=new MimeMultipart();
 
-            MimeBodyPart attachment= new MimeBodyPart();
-            attachment.attachFile(imageLocation);
-            mp.addBodyPart(attachment);
+                Multipart mp=new MimeMultipart();
 
-            message.setContent(mp);
+                if (contentIsImageLocation) {
+                    MimeBodyPart attachment= new MimeBodyPart();
+                    attachment.attachFile(content);
+                    mp.addBodyPart(attachment);
+                } else {
+                    MimeBodyPart textPart = new MimeBodyPart();
+                    textPart.setText(content, "utf-8");
+                    mp.addBodyPart(textPart);
+                }
+
+                message.setContent(mp);
 
             Transport.send(message);
 

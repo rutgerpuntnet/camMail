@@ -29,4 +29,15 @@
 		<filter-name>wicket.camMail</filter-name>
 		<url-pattern>/*</url-pattern>
 	</filter-mapping>
+
+	<servlet>
+		<servlet-name>TimerServlet</servlet-name>
+		<servlet-class>net.rutger.TimerServlet</servlet-class>
+	</servlet>
+
+	<servlet-mapping>
+		<servlet-name>TimerServlet</servlet-name>
+		<url-pattern>/timerServlet</url-pattern>
+	</servlet-mapping>
+
 </web-app>

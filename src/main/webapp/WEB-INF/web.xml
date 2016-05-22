@@ -33,6 +33,7 @@
 	<servlet>
 		<servlet-name>TimerServlet</servlet-name>
 		<servlet-class>net.rutger.TimerServlet</servlet-class>
+		<load-on-startup>1</load-on-startup>
 	</servlet>
 
 	<servlet-mapping>

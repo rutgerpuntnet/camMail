@@ -7,20 +7,29 @@ import org.apache.wicket.protocol.http.WebApplication;
 import org.apache.wicket.request.mapper.parameter.PageParameters;
 import org.apache.wicket.request.resource.DynamicImageResource;
 import org.apache.wicket.request.resource.IResource;
-import org.joda.time.DateTime;
-import org.joda.time.format.DateTimeFormat;
-import org.joda.time.format.DateTimeFormatter;
 
 import javax.imageio.ImageIO;
-import javax.mail.*;
+import javax.mail.Message;
+import javax.mail.MessagingException;
+import javax.mail.Multipart;
+import javax.mail.PasswordAuthentication;
+import javax.mail.Session;
+import javax.mail.Transport;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeMultipart;
 import javax.servlet.ServletContext;
 import java.awt.image.BufferedImage;
-import java.io.*;
-import java.util.Locale;
+import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
@@ -139,8 +148,7 @@ public abstract class AbstractCamPage extends WebPage {
             }
             message.setRecipients(Message.RecipientType.TO, recipients);
 
-            DateTimeFormatter fmt = DateTimeFormat.forPattern("E d MMMM, HH:mm").withLocale(new Locale("nl", "NL"));
-            message.setSubject("Deurbel ging: " + new DateTime().toString(fmt));
+            message.setSubject("Deurbel ging: " + ZonedDateTime.now().format(DateTimeFormatter.RFC_1123_DATE_TIME));
 
 
                 Multipart mp=new MimeMultipart();
@@ -193,11 +201,9 @@ public abstract class AbstractCamPage extends WebPage {
     }
 
     protected byte[] getImage(String fileNamePath) {
-        File imageFile = new File(fileNamePath);
-        BufferedImage img = null;
         byte[] bytes;
         try {
-            img = ImageIO.read(imageFile);
+            BufferedImage img = ImageIO.read(new File(fileNamePath));
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             ImageIO.write(img, "jpg", baos);
             bytes = baos.toByteArray();

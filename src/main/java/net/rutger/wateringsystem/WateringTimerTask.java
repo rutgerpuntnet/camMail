@@ -12,7 +12,7 @@ import java.io.Reader;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
@@ -56,13 +56,13 @@ public class WateringTimerTask extends TimerTask {
     
     @Override
     public void run() {
-        logger.debug("Running garden water task at " + LocalDateTime.now().format(DateTimeFormatter.RFC_1123_DATE_TIME));
 
         runGardenWaterTask();
     }
 
 
     public static void runGardenWaterTask() {
+        logger.debug("Running garden water task at " + ZonedDateTime.now().format(DateTimeFormatter.RFC_1123_DATE_TIME));
         int minutes = determineWateringMinutes();
 
         // Get request on arduino wateringsystem

@@ -101,16 +101,21 @@ public class WateringTimerTask extends TimerTask {
         // TODO implement
         // Get data from KNMI (for now, start with default 10 minutes
         int minutes = DEFAULT_WATER_MINUTES;
-
-        Map<WeatherDataTypes, Integer> weatherData = getYesterdaysWeatherData();
-        Integer transpiration = weatherData.get(WeatherDataTypes.TRANSPIRATION);
-        logger.info("transpiration " + transpiration);
-        // transpiration index is between about 4 (on a very wet day) and about 57 (on a very hot sunny dry day)
-        // We'll use 27 as average, any 2 points, we'll add 1 minute, below 25 is the opposite
-        if (transpiration != null) {
-            int restTranspiration = (transpiration - AVERAGE_MAKKINK) / 2;
-            minutes += restTranspiration;
+        try {
+            Map<WeatherDataTypes, Integer> weatherData = getYesterdaysWeatherData();
+            Integer transpiration = weatherData.get(WeatherDataTypes.TRANSPIRATION);
+            logger.info("transpiration " + transpiration);
+            // transpiration index is between about 4 (on a very wet day) and about 57 (on a very hot sunny dry day)
+            // We'll use 27 as average, any 2 points, we'll add 1 minute, below 25 is the opposite
+            if (transpiration != null) {
+                int restTranspiration = (transpiration - AVERAGE_MAKKINK) / 2;
+                minutes += restTranspiration;
+            }
+        } catch (RuntimeException e) {
+            logger.warn("Exception on receiving weatherdata. Returning default minutes: " + e.getMessage());
         }
+        logger.info("Number of minutes to water: " + minutes);
+
         return minutes;
     }
 
@@ -127,21 +132,24 @@ public class WateringTimerTask extends TimerTask {
      * Parse the given raw weather data from KNMI into a map per dataType
      */
     private static Map<WeatherDataTypes, Integer> parseWeatherData(String rawData) {
+        Map<WeatherDataTypes, Integer> result = new HashMap<>();
+
         String[] lines = rawData.split("\\s*\\r?\\n\\s*");
         Integer contentLineIndex = determineContentLineNumber(lines);
-        // get the columnames, these are 2 lines above the data.
-        String[] columnames = lines[contentLineIndex-2].replaceAll("\\s+","").split(",");
-        String[] columvalues = lines[contentLineIndex].replaceAll("\\s+","").split(",");
-        Map<WeatherDataTypes, Integer> result = new HashMap<>();
-        if (columnames.length != columvalues.length) {
-            logger.error("wrong data retrieved. No results:\n" + lines);
-        } else {
-            for (int i = 0; i < columnames.length; i++) {
-                WeatherDataTypes type = WeatherDataTypes.getByCode(columnames[i]);
-                try {
-                    result.put(type, Integer.valueOf(columvalues[i]));
-                } catch (NumberFormatException ne) {
-                    logger.warn("Unable to parse data from type " + type.name());
+        if(contentLineIndex != null) {
+            // get the columnames, these are 2 lines above the data.
+            String[] columnames = lines[contentLineIndex-2].replaceAll("\\s+","").split(",");
+            String[] columvalues = lines[contentLineIndex].replaceAll("\\s+","").split(",");
+            if (columnames.length != columvalues.length) {
+                logger.error("wrong data retrieved. No results:\n" + lines);
+            } else {
+                for (int i = 0; i < columnames.length; i++) {
+                    WeatherDataTypes type = WeatherDataTypes.getByCode(columnames[i]);
+                    try {
+                        result.put(type, Integer.valueOf(columvalues[i]));
+                    } catch (NumberFormatException ne) {
+                        logger.warn("Unable to parse data from type " + type.name());
+                    }
                 }
             }
         }
@@ -185,6 +193,7 @@ public class WateringTimerTask extends TimerTask {
             try {
                 is.close();
             } catch (NullPointerException e) {
+
             } catch (IOException e) {
                 logger.error("Exception while closing inputstream");
             }

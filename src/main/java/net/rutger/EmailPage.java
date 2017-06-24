@@ -1,5 +1,6 @@
 package net.rutger;
 
+import net.rutger.util.EmailUtil;
 import org.apache.wicket.request.cycle.RequestCycle;
 import org.apache.wicket.request.http.WebRequest;
 import org.apache.wicket.request.http.flow.AbortWithHttpErrorCodeException;
@@ -7,6 +8,8 @@ import org.apache.wicket.request.mapper.parameter.PageParameters;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 
 /**
  * Created by rutger on 03-04-16.
@@ -22,7 +25,9 @@ public class EmailPage extends AbstractCamPage {
     public EmailPage(PageParameters parameters) {
         super(parameters);
         if (getPageParameters().get("debug").toBoolean()) {
-            email(getPageParameters().get("content").toString("Test email"), false, true);
+            String subject = "Test email at: " + ZonedDateTime.now().format(DateTimeFormatter.RFC_1123_DATE_TIME);
+
+            EmailUtil.email(getPageParameters().get("content").toString("Test email"), subject, false, true);
             throw new AbortWithHttpErrorCodeException(HttpServletResponse.SC_OK);
         } else {
             WebRequest req = (WebRequest) RequestCycle.get().getRequest();

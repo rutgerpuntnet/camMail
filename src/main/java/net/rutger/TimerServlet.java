@@ -1,6 +1,5 @@
 package net.rutger;
 
-import net.rutger.wateringsystem.WateringTimerTask;
 import org.apache.log4j.Logger;
 
 import java.io.IOException;
@@ -19,7 +18,6 @@ public class TimerServlet extends HttpServlet {
 
 
     private static final Logger logger = Logger.getLogger(TimerServlet.class);
-    private Timer morningtimer = null;
     private Timer hourlyTimer = null;
 
     public void init() throws ServletException {
@@ -34,10 +32,6 @@ public class TimerServlet extends HttpServlet {
             }
         };
 
-        ZonedDateTime nextMorningTimerTime = getNextTime(8,50);
-        morningtimer = new Timer();
-        morningtimer.schedule(new WateringTimerTask(), Date.from(nextMorningTimerTime.toInstant()), TimeUnit.MILLISECONDS.convert(1, TimeUnit.DAYS));
-        logger.debug("WateringTimerTask (daily) set for " + nextMorningTimerTime.format(DateTimeFormatter.RFC_1123_DATE_TIME));
 
         hourlyTimer = new Timer();
         hourlyTimer.schedule(hourlyTask, new Date(), TimeUnit.MILLISECONDS.convert(1, TimeUnit.HOURS));
@@ -47,10 +41,6 @@ public class TimerServlet extends HttpServlet {
     public void doGet(HttpServletRequest request,
                       HttpServletResponse response)
             throws ServletException, IOException {
-
-        // run the watertask on a get request (testing purposes)
-        logger.debug("Run the watertask");
-        new WateringTimerTask().runGardenWaterTask();
     }
 
 
@@ -58,9 +48,6 @@ public class TimerServlet extends HttpServlet {
     public void destroy() {
         // do nothing.
         logger.debug("Destroy TimerServlet");
-        if (morningtimer != null) {
-            morningtimer.cancel();
-        }
         if (hourlyTimer != null) {
             hourlyTimer.cancel();
         }
